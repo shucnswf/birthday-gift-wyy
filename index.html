@@ -2,151 +2,143 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM OVERRIDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SYSTEM_RUNNING...</title>
     <style>
-        body {
-            background-color: #000000;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
+        body { background-color: #000; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; touch-action: none; }
+        #screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; }
         
-        /* === 第一幕：开场画面样式 === */
-        #intro-screen {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            text-align: center;
-        }
-        #ascii-art {
-            font-size: 14px;
-            line-height: 1.2;
-            margin-bottom: 40px;
-            text-shadow: 0 0 5px #00ff00;
-            font-weight: bold;
-        }
-        .blink {
-            animation: blinker 1.2s linear infinite;
-            font-size: 1.2rem;
-            opacity: 0.8;
-        }
-        @keyframes blinker {
-            50% { opacity: 0; }
-        }
-
-        /* === 第二幕：终端解密画面样式 === */
-        #terminal-screen {
-            display: none; /* 初始隐藏 */
-            flex-direction: column;
-            height: 100%;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-        #output {
-            white-space: pre-wrap;
-            margin-bottom: 10px;
-            line-height: 1.5;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-        #output::-webkit-scrollbar {
-            width: 8px;
-        }
-        #output::-webkit-scrollbar-thumb {
-            background: #004400; 
-        }
-        #input-line {
-            display: flex;
-            margin-top: auto;
-        }
-        #prompt {
-            margin-right: 10px;
-        }
-        input {
-            background-color: transparent;
-            color: #00ff00;
-            border: none;
-            outline: none;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            flex-grow: 1;
-        }
+        /* 游戏画布 */
+        #game-canvas { display: none; border: 2px solid #00ff00; background: #000; box-shadow: 0 0 20px #004400; }
+        
+        /* 闪烁文字 */
+        .blink { animation: b 1s infinite; font-size: 1.2rem; cursor: pointer; }
+        @keyframes b { 50% { opacity: 0; } }
+        
+        /* 结局弹窗 */
+        #reward { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 3px solid #00ff00; padding: 20px; text-align: center; z-index: 100; }
+        img { max-width: 200px; margin: 10px; border: 2px solid #fff; }
     </style>
 </head>
 <body>
 
-    <div id="intro-screen">
-        <pre id="ascii-art">
-  ___  ___  ___    _ ___  ___ _____    __  _  _ ___ ___ ___ ___ 
- | _ \| _ \/ _ \_ | | __|/ __|_   _|  / _\| \| |_ _| _ \ __| _ \
- |  _/|   / (_) | || | _|| (__  | |   \ \ | .` || ||  _/ _||   /
- |_|  |_|_\\___/\__/|___|\___| |_|    _\_\|_|\_|___|_| |___|_|_\
-                                                                
-               [ SYSTEM OS v2.0 - RESTRICTED AREA ]
+<div id="screen">
+    <div id="intro">
+        <pre style="font-size: 10px; line-height: 1.1;">
+  ____  _   _ _____ ____  _____ ____  
+ |  _ \| | | | ____|  _ \| ____|  _ \ 
+ | |_) | | | |  _| | |_) |  _| | |_) |
+ |  __/| |_| | |___|  _ <| |___|  _ < 
+ |_|    \___/|_____|_| \_\_____|_| \_\
+                                      
+      [ CRITICAL SYSTEM ACCESS ]
         </pre>
-        <p class="blink">> PRESS ANY KEY TO INITIATE SEQUENCE _</p>
+        <p class="blink">> PRESS ANY KEY / TAP TO START _</p>
     </div>
 
-    <div id="terminal-screen">
-        <div id="output">
-> SECURE CONNECTION ESTABLISHED.
-> WARNING: CLASS-A ENCRYPTION DETECTED.
-> PLEASE ENTER OVERRIDE PASSCODE.
-        </div>
-        <div id="input-line">
-            <span id="prompt">root@sniper:~$</span>
-            <input type="text" id="cmd" autocomplete="off">
-        </div>
-    </div>
+    <canvas id="game-canvas"></canvas>
+</div>
 
-    <script>
-        const introScreen = document.getElementById('intro-screen');
-        const terminalScreen = document.getElementById('terminal-screen');
-        const inputField = document.getElementById('cmd');
-        const outputArea = document.getElementById('output');
+<div id="reward">
+    <h2>> ACCESS GRANTED?</h2>
+    <p>恭喜通关！这是你的奖励：</p>
+    <div style="background: white; color: black; padding: 10px; font-weight: bold;">[ 收款码图片占位 ]</div>
+    <p style="color: red; font-size: 0.8rem;">ERROR: 支付环境异常，请查看源码获取真实秘钥...</p>
+    <button onclick="location.reload()" style="background:#00ff00; border:none; padding:10px;">REBOOT</button>
+</div>
 
-        // 核心逻辑：监听“随便按一个键”的事件
-        document.addEventListener('keydown', function initTerminal(e) {
-            // 判断当前是否还在开场画面
-            if (introScreen.style.display !== 'none') {
-                introScreen.style.display = 'none';      // 隐藏开场画面
-                terminalScreen.style.display = 'flex';   // 显示黑客终端
-                inputField.focus();                      // 自动聚焦输入框，可以直接打字
+<script>
+    const intro = document.getElementById('intro');
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const reward = document.getElementById('reward');
+
+    let gameActive = false;
+    let score = 0;
+    const player = { x: 0, y: 0, w: 30, h: 50 };
+    let obstacles = [];
+    let frame = 0;
+
+    // 初始化游戏尺寸
+    function initCanvas() {
+        canvas.width = Math.min(window.innerWidth - 40, 400);
+        canvas.height = Math.min(window.innerHeight - 100, 600);
+        player.x = canvas.width / 2 - 15;
+        player.y = canvas.height - 70;
+    }
+
+    // 开始游戏切换
+    function startGame() {
+        if (gameActive) return;
+        intro.style.display = 'none';
+        canvas.style.display = 'block';
+        gameActive = true;
+        initCanvas();
+        loop();
+    }
+
+    // 监听输入
+    window.addEventListener('keydown', (e) => {
+        if (!gameActive) startGame();
+        if (e.key === 'ArrowLeft' && player.x > 0) player.x -= 20;
+        if (e.key === 'ArrowRight' && player.x < canvas.width - player.w) player.x += 20;
+    });
+    window.addEventListener('touchstart', (e) => {
+        if (!gameActive) startGame();
+        const touchX = e.touches[0].clientX;
+        if (touchX < window.innerWidth / 2) player.x -= 30;
+        else player.x += 30;
+    });
+
+    function loop() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 绘制玩家 (🛵)
+        ctx.font = "30px Arial";
+        ctx.fillText("🛵", player.x, player.y);
+
+        // 生成障碍物
+        if (frame % 30 === 0) {
+            obstacles.push({ x: Math.random() * (canvas.width - 30), y: -50 });
+        }
+
+        // 绘制并移动障碍物 (🚧)
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            obstacles[i].y += 5;
+            ctx.fillText("🚧", obstacles[i].x, obstacles[i].y);
+
+            // 碰撞检测
+            if (Math.abs(player.x - obstacles[i].x) < 25 && Math.abs(player.y - obstacles[i].y) < 25) {
+                gameOver();
             }
-        });
 
-        // 优化体验：确保点击页面任何地方，输入框都不会失去焦点
-        document.addEventListener('click', () => {
-            if (terminalScreen.style.display === 'flex') {
-                inputField.focus();
+            if (obstacles[i].y > canvas.height) {
+                obstacles.splice(i, 1);
+                score++;
             }
-        });
+        }
 
-        // 终端输入逻辑
-        inputField.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                const command = inputField.value.trim().toUpperCase();
-                
-                outputArea.innerHTML += `\nroot@sniper:~$ ${command}\n`;
+        // 胜利条件：坚持到300帧（约10秒）
+        if (frame > 600) {
+            win();
+            return;
+        }
 
-                if (command === 'HELP') {
-                    outputArea.innerHTML += `> HINT: CHECK THE PHYSICAL FRAGMENT.\n`;
-                } else if (command === 'PASSWORD123') { 
-                    outputArea.innerHTML += `> HAHA, NICE TRY. CHECK THE SOURCE.\n`;
-                } else {
-                    outputArea.innerHTML += `> ACCESS DENIED. INVALID COMMAND.\n`;
-                }
+        frame++;
+        requestAnimationFrame(loop);
+    }
 
-                inputField.value = ''; // 清空输入框
-                outputArea.scrollTop = outputArea.scrollHeight; // 始终滚动到最新一行
-            }
-        });
-    </script>
+    function gameOver() {
+        alert("SYSTEM CRASHED: 你撞车了！重新启动系统...");
+        location.reload();
+    }
+
+    function win() {
+        gameActive = false;
+        canvas.style.display = 'none';
+        reward.style.display = 'block';
+    }
+</script>
 </body>
 </html>
