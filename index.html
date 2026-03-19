@@ -9,18 +9,61 @@
             background-color: #000000;
             color: #00ff00;
             font-family: 'Courier New', Courier, monospace;
-            padding: 40px;
             margin: 0;
             height: 100vh;
             box-sizing: border-box;
+            overflow: hidden;
+        }
+        
+        /* === 第一幕：开场画面样式 === */
+        #intro-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+        #ascii-art {
+            font-size: 14px;
+            line-height: 1.2;
+            margin-bottom: 40px;
+            text-shadow: 0 0 5px #00ff00;
+            font-weight: bold;
+        }
+        .blink {
+            animation: blinker 1.2s linear infinite;
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        /* === 第二幕：终端解密画面样式 === */
+        #terminal-screen {
+            display: none; /* 初始隐藏 */
+            flex-direction: column;
+            height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
         }
         #output {
-            white-space: pre-wrap; /* 保持换行格式 */
+            white-space: pre-wrap;
             margin-bottom: 10px;
             line-height: 1.5;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        #output::-webkit-scrollbar {
+            width: 8px;
+        }
+        #output::-webkit-scrollbar-thumb {
+            background: #004400; 
         }
         #input-line {
             display: flex;
+            margin-top: auto;
         }
         #prompt {
             margin-right: 10px;
@@ -37,40 +80,71 @@
     </style>
 </head>
 <body>
-    <div id="output">
-> SYSTEM_INITIALIZING...
-> CONNECTION ESTABLISHED.
-> WARNING: UNAUTHORIZED ACCESS DETECTED.
+
+    <div id="intro-screen">
+        <pre id="ascii-art">
+  ___  ___  ___    _ ___  ___ _____    __  _  _ ___ ___ ___ ___ 
+ | _ \| _ \/ _ \_ | | __|/ __|_   _|  / _\| \| |_ _| _ \ __| _ \
+ |  _/|   / (_) | || | _|| (__  | |   \ \ | .` || ||  _/ _||   /
+ |_|  |_|_\\___/\__/|___|\___| |_|    _\_\|_|\_|___|_| |___|_|_\
+                                                                
+               [ SYSTEM OS v2.0 - RESTRICTED AREA ]
+        </pre>
+        <p class="blink">> PRESS ANY KEY TO INITIATE SEQUENCE _</p>
     </div>
-    <div id="input-line">
-        <span id="prompt">> ENTER ACCESS CODE:</span>
-        <input type="text" id="cmd" autocomplete="off" autofocus>
+
+    <div id="terminal-screen">
+        <div id="output">
+> SECURE CONNECTION ESTABLISHED.
+> WARNING: CLASS-A ENCRYPTION DETECTED.
+> PLEASE ENTER OVERRIDE PASSCODE.
+        </div>
+        <div id="input-line">
+            <span id="prompt">root@sniper:~$</span>
+            <input type="text" id="cmd" autocomplete="off">
+        </div>
     </div>
 
     <script>
+        const introScreen = document.getElementById('intro-screen');
+        const terminalScreen = document.getElementById('terminal-screen');
         const inputField = document.getElementById('cmd');
         const outputArea = document.getElementById('output');
 
+        // 核心逻辑：监听“随便按一个键”的事件
+        document.addEventListener('keydown', function initTerminal(e) {
+            // 判断当前是否还在开场画面
+            if (introScreen.style.display !== 'none') {
+                introScreen.style.display = 'none';      // 隐藏开场画面
+                terminalScreen.style.display = 'flex';   // 显示黑客终端
+                inputField.focus();                      // 自动聚焦输入框，可以直接打字
+            }
+        });
+
+        // 优化体验：确保点击页面任何地方，输入框都不会失去焦点
+        document.addEventListener('click', () => {
+            if (terminalScreen.style.display === 'flex') {
+                inputField.focus();
+            }
+        });
+
+        // 终端输入逻辑
         inputField.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const command = inputField.value.trim().toUpperCase();
                 
-                // 将用户的输入打印到屏幕上
-                outputArea.innerHTML += `\n> ENTER ACCESS CODE: ${command}\n`;
+                outputArea.innerHTML += `\nroot@sniper:~$ ${command}\n`;
 
-                // 核心逻辑：判断密码
-                if (command === 'PROJECT_SNIPER') {
-                    outputArea.innerHTML += `> ACCESS DENIED. NICE TRY, BUT THAT'S JUST A DISTRACTION.\n> SCAN THE FRAGMENT TO PROCEED.\n`;
-                    // 这里未来可以加上弹出假二维码的逻辑
-                } else if (command === 'REAL_PASSWORD') {
-                    outputArea.innerHTML += `> ACCESS GRANTED.\n> HAPPY BIRTHDAY! INITIATING REWARD SEQUENCE...\n`;
-                    // 这里未来放真二维码或推箱子游戏
+                if (command === 'HELP') {
+                    outputArea.innerHTML += `> HINT: CHECK THE PHYSICAL FRAGMENT.\n`;
+                } else if (command === 'PASSWORD123') { 
+                    outputArea.innerHTML += `> HAHA, NICE TRY. CHECK THE SOURCE.\n`;
                 } else {
-                    outputArea.innerHTML += `> ERROR: INVALID CODE.\n`;
+                    outputArea.innerHTML += `> ACCESS DENIED. INVALID COMMAND.\n`;
                 }
 
                 inputField.value = ''; // 清空输入框
-                window.scrollTo(0, document.body.scrollHeight); // 自动滚动到底部
+                outputArea.scrollTop = outputArea.scrollHeight; // 始终滚动到最新一行
             }
         });
     </script>
