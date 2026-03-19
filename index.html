@@ -7,24 +7,72 @@
     <style>
         body {
             background-color: #000000;
-            color: #00ff00; /* 经典的黑客绿 */
+            color: #00ff00;
             font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            padding: 40px;
             margin: 0;
-            overflow: hidden;
+            height: 100vh;
+            box-sizing: border-box;
         }
-        h1 { font-size: 2rem; border-right: 2px solid #00ff00; white-space: nowrap; overflow: hidden; animation: typing 2s steps(20, end), blink-caret .75s step-end infinite; }
-        p { margin-top: 20px; opacity: 0.7; }
-        @keyframes typing { from { width: 0 } to { width: 100% } }
-        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #00ff00; } }
+        #output {
+            white-space: pre-wrap; /* 保持换行格式 */
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        #input-line {
+            display: flex;
+        }
+        #prompt {
+            margin-right: 10px;
+        }
+        input {
+            background-color: transparent;
+            color: #00ff00;
+            border: none;
+            outline: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            flex-grow: 1;
+        }
     </style>
 </head>
 <body>
-    <h1>> SYSTEM_INITIALIZING...</h1>
-    <p>Awaiting payload deployment. Stand by.</p>
+    <div id="output">
+> SYSTEM_INITIALIZING...
+> CONNECTION ESTABLISHED.
+> WARNING: UNAUTHORIZED ACCESS DETECTED.
+    </div>
+    <div id="input-line">
+        <span id="prompt">> ENTER ACCESS CODE:</span>
+        <input type="text" id="cmd" autocomplete="off" autofocus>
+    </div>
+
+    <script>
+        const inputField = document.getElementById('cmd');
+        const outputArea = document.getElementById('output');
+
+        inputField.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const command = inputField.value.trim().toUpperCase();
+                
+                // 将用户的输入打印到屏幕上
+                outputArea.innerHTML += `\n> ENTER ACCESS CODE: ${command}\n`;
+
+                // 核心逻辑：判断密码
+                if (command === 'PROJECT_SNIPER') {
+                    outputArea.innerHTML += `> ACCESS DENIED. NICE TRY, BUT THAT'S JUST A DISTRACTION.\n> SCAN THE FRAGMENT TO PROCEED.\n`;
+                    // 这里未来可以加上弹出假二维码的逻辑
+                } else if (command === 'REAL_PASSWORD') {
+                    outputArea.innerHTML += `> ACCESS GRANTED.\n> HAPPY BIRTHDAY! INITIATING REWARD SEQUENCE...\n`;
+                    // 这里未来放真二维码或推箱子游戏
+                } else {
+                    outputArea.innerHTML += `> ERROR: INVALID CODE.\n`;
+                }
+
+                inputField.value = ''; // 清空输入框
+                window.scrollTo(0, document.body.scrollHeight); // 自动滚动到底部
+            }
+        });
+    </script>
 </body>
 </html>
