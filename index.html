@@ -3,142 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SYSTEM_RUNNING...</title>
+    <title>PROJECT_SNIPER_V2</title>
     <style>
-        body { background-color: #000; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; touch-action: none; }
-        #screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+        :root { --green: #00ff00; --dark: #000; --gray: #333; }
+        body { background: var(--dark); color: var(--green); font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         
-        /* 游戏画布 */
-        #game-canvas { display: none; border: 2px solid #00ff00; background: #000; box-shadow: 0 0 20px #004400; }
+        /* 状态容器 */
+        .screen { display: none; width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; text-align: center; }
+        .active { display: flex; flex-direction: column; align-items: center; }
+
+        /* 选关界面网格 */
+        .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; }
+        .level-box { width: 50px; height: 50px; border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .level-box.locked { color: var(--gray); border-color: var(--gray); cursor: not-allowed; }
+        .level-box:not(.locked):hover { background: var(--green); color: var(--dark); }
+
+        /* 游戏界面 */
+        #map { font-size: 16px; line-height: 1.1; letter-spacing: 2px; white-space: pre; background: #080808; padding: 15px; border: 1px solid #333; margin: 15px 0; overflow-x: auto; width: 100%; }
+        .btn { background: transparent; border: 1px solid var(--green); color: var(--green); padding: 10px 20px; cursor: pointer; margin: 5px; font-family: inherit; }
+        .btn:hover { background: var(--green); color: var(--dark); }
         
-        /* 闪烁文字 */
-        .blink { animation: b 1s infinite; font-size: 1.2rem; cursor: pointer; }
-        @keyframes b { 50% { opacity: 0; } }
-        
-        /* 结局弹窗 */
-        #reward { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 3px solid #00ff00; padding: 20px; text-align: center; z-index: 100; }
-        img { max-width: 200px; margin: 10px; border: 2px solid #fff; }
+        /* 弹窗样式 */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 2px solid var(--green); padding: 20px; z-index: 1000; width: 80%; text-align: center; box-shadow: 0 0 30px var(--green); }
     </style>
 </head>
 <body>
 
-<div id="screen">
-    <div id="intro">
-        <pre style="font-size: 10px; line-height: 1.1;">
-  ____  _   _ _____ ____  _____ ____  
- |  _ \| | | | ____|  _ \| ____|  _ \ 
- | |_) | | | |  _| | |_) |  _| | |_) |
- |  __/| |_| | |___|  _ <| |___|  _ < 
- |_|    \___/|_____|_| \_\_____|_| \_\
-                                      
-      [ CRITICAL SYSTEM ACCESS ]
-        </pre>
-        <p class="blink">> PRESS ANY KEY / TAP TO START _</p>
+    <div id="menu-screen" class="screen active">
+        <h1 style="font-size: 1.5rem;">>> SYSTEM_OVERRIDE</h1>
+        <button class="btn" onclick="showLevelSelect()">[ 01 ] 开始推箱子挑战</button>
+        <button class="btn" onclick="alert('错误：需要解密金属板以获得权限')">[ 02 ] 核心推理链 (锁定)</button>
     </div>
 
-    <canvas id="game-canvas"></canvas>
-</div>
+    <div id="select-screen" class="screen">
+        <h2>选择关卡</h2>
+        <div id="level-grid" class="level-grid"></div>
+        <button class="btn" onclick="showScreen('menu-screen')" style="margin-top:30px;">返回主菜单</button>
+    </div>
 
-<div id="reward">
-    <h2>> ACCESS GRANTED?</h2>
-    <p>恭喜通关！这是你的奖励：</p>
-    <div style="background: white; color: black; padding: 10px; font-weight: bold;">[ 收款码图片占位 ]</div>
-    <p style="color: red; font-size: 0.8rem;">ERROR: 支付环境异常，请查看源码获取真实秘钥...</p>
-    <button onclick="location.reload()" style="background:#00ff00; border:none; padding:10px;">REBOOT</button>
-</div>
+    <div id="game-screen" class="screen">
+        <div>LVL: <span id="current-lvl-display">1</span> | STEPS: <span id="step-count">0</span></div>
+        <div id="map"></div>
+        <div>
+            <button class="btn" onclick="undo()">撤回</button>
+            <button class="btn" onclick="resetLevel()">重置</button>
+            <button class="btn" onclick="showLevelSelect()">退出</button>
+        </div>
+        <div style="margin-top:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+            <div></div><button class="btn" onclick="handleMove(0,-1)">↑</button><div></div>
+            <button class="btn" onclick="handleMove(-1,0)">←</button><button class="btn" onclick="handleMove(0,1)">↓</button><button class="btn" onclick="handleMove(1,0)">→</button>
+        </div>
+    </div>
+
+    <div id="reward-modal" class="modal">
+        <h2 id="reward-title">里程碑达成！</h2>
+        <p id="reward-msg"></p>
+        <button class="btn" onclick="closeModal()">收下并继续</button>
+    </div>
 
 <script>
-    const intro = document.getElementById('intro');
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
-    const reward = document.getElementById('reward');
+// === 关卡数据区 (示例3关，你可以一直加到50个) ===
+const LEVELS = [
+    ["  #####  ","###   #  ","# @$  #  ","### $.#  ","#.##$ #  ","# # . ## ","#$ *$$.# ","#   .  # ","######## "], // L1
+    [" ##### "," #   # "," #$  # ","### $##"," #  $.#"," # @  #"," #   .#"," ######"], // L2
+    ["  #### ","###  ####","#   $   #","# #  #$ #","# . .#@ #","#########"]  // L3
+    // ... 在这里继续粘贴后续关卡
+];
 
-    let gameActive = false;
-    let score = 0;
-    const player = { x: 0, y: 0, w: 30, h: 50 };
-    let obstacles = [];
-    let frame = 0;
+const MILESTONES = {
+    10: "暗号：【初露锋芒】。截图发我领1元红包！",
+    20: "暗号：【渐入佳境】。截图发我领1元红包！",
+    30: "暗号：【逻辑大师】。截图发我领1元红包！",
+    40: "暗号：【坚持不懈】。截图发我领1元红包！",
+    50: "终极奖励：恭喜你通关了！请查看终极奖励页面。"
+};
 
-    // 初始化游戏尺寸
-    function initCanvas() {
-        canvas.width = Math.min(window.innerWidth - 40, 400);
-        canvas.height = Math.min(window.innerHeight - 100, 600);
-        player.x = canvas.width / 2 - 15;
-        player.y = canvas.height - 70;
+let currentLevelIdx = 0;
+let mapData = [];
+let history = [];
+let steps = 0;
+let completedLevels = JSON.parse(localStorage.getItem('sokoban_progress') || '[0]'); // 默认解锁第一关
+
+// 界面切换
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+// 渲染选关界面
+function showLevelSelect() {
+    const grid = document.getElementById('level-grid');
+    grid.innerHTML = '';
+    for (let i = 0; i < LEVELS.length; i++) {
+        const box = document.createElement('div');
+        box.className = 'level-box' + (completedLevels.includes(i) ? '' : ' locked');
+        box.innerText = completedLevels.includes(i) ? (i + 1) : '?';
+        if (completedLevels.includes(i)) {
+            box.onclick = () => startLevel(i);
+        }
+        grid.appendChild(box);
+    }
+    showScreen('select-screen');
+}
+
+function startLevel(idx) {
+    currentLevelIdx = idx;
+    steps = 0;
+    history = [];
+    mapData = LEVELS[idx].map(row => row.split(''));
+    document.getElementById('current-lvl-display').innerText = idx + 1;
+    render();
+    showScreen('game-screen');
+}
+
+const charMap = { '#': '█', ' ': ' ', '.': '·', '$': '▣', '@': '👤', '*': '✅', '+': '👥' };
+
+function render() {
+    const mapStr = mapData.map(row => row.map(c => charMap[c] || c).join('')).join('\n');
+    document.getElementById('map').innerText = mapStr;
+    document.getElementById('step-count').innerText = steps;
+}
+
+function handleMove(dx, dy) {
+    let r, c;
+    for (let i = 0; i < mapData.length; i++) {
+        for (let j = 0; j < mapData[i].length; j++) {
+            if (mapData[i][j] === '@' || mapData[i][j] === '+') { r = i; c = j; break; }
+        }
+    }
+    const nr = r + dy, nc = c + dx;
+    const nnr = nr + dy, nnc = nc + dx;
+    const prevState = JSON.stringify(mapData);
+    let moved = false;
+
+    if (mapData[nr][nc] === ' ' || mapData[nr][nc] === '.') {
+        mapData[r][c] = (mapData[r][c] === '+' ? '.' : ' ');
+        mapData[nr][nc] = (mapData[nr][nc] === '.' ? '+' : '@');
+        moved = true;
+    } else if (mapData[nr][nc] === '$' || mapData[nr][nc] === '*') {
+        if (mapData[nnr][nnc] === ' ' || mapData[nnr][nnc] === '.') {
+            mapData[nnr][nnc] = (mapData[nnr][nnc] === '.' ? '*' : '$');
+            mapData[nr][nc] = (mapData[nr][nc] === '*' ? '+' : '@');
+            mapData[r][c] = (mapData[r][c] === '+' ? '.' : ' ');
+            moved = true;
+        }
     }
 
-    // 开始游戏切换
-    function startGame() {
-        if (gameActive) return;
-        intro.style.display = 'none';
-        canvas.style.display = 'block';
-        gameActive = true;
-        initCanvas();
-        loop();
+    if (moved) {
+        history.push(prevState);
+        steps++;
+        render();
+        checkWin();
     }
+}
 
-    // 监听输入
-    window.addEventListener('keydown', (e) => {
-        if (!gameActive) startGame();
-        if (e.key === 'ArrowLeft' && player.x > 0) player.x -= 20;
-        if (e.key === 'ArrowRight' && player.x < canvas.width - player.w) player.x += 20;
-    });
-    window.addEventListener('touchstart', (e) => {
-        if (!gameActive) startGame();
-        const touchX = e.touches[0].clientX;
-        if (touchX < window.innerWidth / 2) player.x -= 30;
-        else player.x += 30;
-    });
-
-    function loop() {
-        if (!gameActive) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 绘制玩家 (🛵)
-        ctx.font = "30px Arial";
-        ctx.fillText("🛵", player.x, player.y);
-
-        // 生成障碍物
-        if (frame % 30 === 0) {
-            obstacles.push({ x: Math.random() * (canvas.width - 30), y: -50 });
+function checkWin() {
+    const hasRemainingBoxes = mapData.some(row => row.includes('$'));
+    if (!hasRemainingBoxes) {
+        // 解锁下一关
+        if (!completedLevels.includes(currentLevelIdx + 1)) {
+            completedLevels.push(currentLevelIdx + 1);
+            localStorage.setItem('sokoban_progress', JSON.stringify(completedLevels));
         }
 
-        // 绘制并移动障碍物 (🚧)
-        for (let i = obstacles.length - 1; i >= 0; i--) {
-            obstacles[i].y += 5;
-            ctx.fillText("🚧", obstacles[i].x, obstacles[i].y);
-
-            // 碰撞检测
-            if (Math.abs(player.x - obstacles[i].x) < 25 && Math.abs(player.y - obstacles[i].y) < 25) {
-                gameOver();
-            }
-
-            if (obstacles[i].y > canvas.height) {
-                obstacles.splice(i, 1);
-                score++;
-            }
+        // 检查里程碑
+        const levelNum = currentLevelIdx + 1;
+        if (MILESTONES[levelNum]) {
+            showModal(levelNum === 50 ? "终极通关！" : "阶段奖励", MILESTONES[levelNum]);
+        } else {
+            alert("关卡完成！");
+            showLevelSelect();
         }
-
-        // 胜利条件：坚持到300帧（约10秒）
-        if (frame > 600) {
-            win();
-            return;
-        }
-
-        frame++;
-        requestAnimationFrame(loop);
     }
+}
 
-    function gameOver() {
-        alert("SYSTEM CRASHED: 你撞车了！重新启动系统...");
-        location.reload();
-    }
+function showModal(title, msg) {
+    document.getElementById('reward-title').innerText = title;
+    document.getElementById('reward-msg').innerText = msg;
+    document.getElementById('reward-modal').style.display = 'block';
+}
 
-    function win() {
-        gameActive = false;
-        canvas.style.display = 'none';
-        reward.style.display = 'block';
+function closeModal() {
+    document.getElementById('reward-modal').style.display = 'none';
+    if (currentLevelIdx + 1 === 50) {
+        // 这里可以跳转到最终的大结局页面或展示收款码
+        alert("前往终极惊喜页面..."); 
+    } else {
+        showLevelSelect();
     }
+}
+
+function undo() { if(history.length > 0) { mapData = JSON.parse(history.pop()); steps--; render(); } }
+function resetLevel() { startLevel(currentLevelIdx); }
+
+// 键盘监听
+window.addEventListener('keydown', (e) => {
+    if (document.getElementById('game-screen').classList.contains('active')) {
+        if (e.key === 'ArrowUp') handleMove(0, -1);
+        if (e.key === 'ArrowDown') handleMove(0, 1);
+        if (e.key === 'ArrowLeft') handleMove(-1, 0);
+        if (e.key === 'ArrowRight') handleMove(1, 0);
+    }
+});
 </script>
 </body>
 </html>
