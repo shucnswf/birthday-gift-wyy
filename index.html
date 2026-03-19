@@ -223,18 +223,16 @@ function startLevel(idx) {
     steps = 0;
     history = [];
     
-    // 获取原始数据
     let rawData = LEVELS[idx];
     
-    // --- 翻译层：如果是数字矩阵，转换成字符格式 ---
-    // 0:空地, 1:墙, 2:目标点, 3:箱子, 4:人, 5:箱子在目标点上
-    const numToChar = { 0: ' ', 1: '#', 2: '.', 3: '$', 4: '@', 5: '*' };
+    // 映射表：必须包含 5 对应 '*' (Box on Target)
+    const numToChar = { 0: ' ', 1: '#', 2: '.', 3: '$', 4: '@', 5: '*', 6: '+' };
     
     if (Array.isArray(rawData[0])) {
-        // 如果是数字阵列 [[0,1...], [0,1...]]
+        // 如果是 2D Array 格式
         mapData = rawData.map(row => row.map(num => numToChar[num] || ' '));
     } else {
-        // 如果是原来的字符串阵列 ["###", "  #"]
+        // 兼容旧的字符串格式
         const maxW = Math.max(...rawData.map(r => r.length));
         mapData = rawData.map(row => row.padEnd(maxW, ' ').split(''));
     }
