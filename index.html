@@ -154,8 +154,8 @@ function renderLevelSelect() {
     grid.innerHTML = '';
     for (let i = 0; i < 40; i++) {
         const box = document.createElement('div');
-        const isUnlocked = unlockedLevels.includes(i);
-        const hasData = i < LEVELS.length;
+        const isUnlocked = true//unlockedLevels.includes(i);
+        const hasData = true//i < LEVELS.length;
         box.className = 'level-box' + (isUnlocked && hasData ? '' : ' locked');
         box.innerText = (isUnlocked && hasData) ? (i + 1) : '?';
         if (isUnlocked && hasData) box.onclick = () => startLevel(i);
