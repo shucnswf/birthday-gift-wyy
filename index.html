@@ -204,21 +204,62 @@ function handleMove(dx, dy) {
 }
 
 function checkWin() {
+    // 检查地图上是否还有未归位的箱子 ($)
     if (!mapData.some(row => row.includes('$'))) {
-        const nextIdx = currentLevelIdx + 1;
-        if (nextIdx < LEVELS.length && !unlockedLevels.includes(nextIdx)) {
-            unlockedLevels.push(nextIdx);
-            localStorage.setItem('sokoban_progress', JSON.stringify(unlockedLevels));
-        }
-        const msg = MILESTONES[currentLevelIdx + 1];
-        msg ? showModal("里程碑达成！", msg) : (alert("通关！"), showScreen('select-screen'));
+        
+        // 关键修复：延迟 300ms 触发，确保玩家先看到箱子变绿勾，再弹窗
+        setTimeout(() => {
+            const nextIdx = currentLevelIdx + 1;
+            
+            // 存储进度
+            if (nextIdx < LEVELS.length && !unlockedLevels.includes(nextIdx)) {
+                unlockedLevels.push(nextIdx);
+                localStorage.setItem('sokoban_progress', JSON.stringify(unlockedLevels));
+            }
+
+            // 获取是否有里程碑暗号
+            const milestoneMsg = MILESTONES[nextIdx];
+            
+            if (milestoneMsg) {
+                // 如果是里程碑关卡（如第10关），显示暗号
+                showGameModal("里程碑达成！", milestoneMsg, true);
+            } else {
+                // 普通关卡显示“进入下一关”
+                showGameModal("通关成功", `恭喜完成第 ${currentLevelIdx + 1} 关！`, true);
+            }
+        }, 300);
     }
 }
 
-function showModal(t, m) { document.getElementById('reward-title').innerText = t; document.getElementById('reward-msg').innerText = m; document.getElementById('reward-modal').style.display = 'block'; }
+function showGameModal(title, msg, hasNextLevel) {
+    document.getElementById('reward-title').innerText = title;
+    document.getElementById('reward-msg').innerText = msg;
+    
+    const modal = document.getElementById('reward-modal');
+    const actionBtn = modal.querySelector('button');
+    
+    // 如果有下一关，按钮改为直接跳转，否则返回选关界面
+    if (hasNextLevel && (currentLevelIdx + 1) < LEVELS.length) {
+        actionBtn.innerText = "进入下一关";
+        actionBtn.onclick = () => {
+            modal.style.display = 'none';
+            startLevel(currentLevelIdx + 1); // 直接开始下一关
+        };
+    } else {
+        actionBtn.innerText = "确认并退出";
+        actionBtn.onclick = () => {
+            modal.style.display = 'none';
+            showScreen('select-screen');
+        };
+    }
+    
+    modal.style.display = 'block';
+}
 function closeModal() { document.getElementById('reward-modal').style.display = 'none'; showScreen('select-screen'); }
 function undo() { if(history.length > 0) { mapData = JSON.parse(history.pop()); steps--; renderBoard(); } }
-function resetLevel() { startLevel(currentLevelIdx); }
+function resetLevel() {
+    startLevel(currentLevelIdx); // 之前的代码可能这里变量名写错了，现在统一
+}
 
 // 键盘监听
 document.addEventListener('keydown', (e) => {
