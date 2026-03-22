@@ -125,29 +125,6 @@
     </div>
 
 <script>
-// ==========================================
-// 全局页面控制与事件监听
-// ==========================================
-function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    
-    // 如果进入选关界面，自动渲染网格
-    if(id === 'select-screen') renderLevelSelect();
-}
-
-// 监听开场“按任意键”
-document.addEventListener('keydown', function introListener(e) {
-    if (document.getElementById('intro-screen').classList.contains('active')) {
-        showScreen('menu-screen');
-    }
-});
-
-// ==========================================
-// 推箱子逻辑区 (数据、渲染、移动逻辑全保留)
-// ==========================================
-// === 从 100 关中精选的 40 关（由易到难排序） ===
-// === 原始矩阵数据精选（40关，直接引用 Source 3 数据） ===
 const LEVELS = [
     // 01-10 关：入门教学（原 0, 1, 2, 3, 4, 10, 11, 12, 13, 14）
     [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,2,1,0,0,0,0,0,0,0],[0,0,0,0,0,0,1,0,1,1,1,1,0,0,0,0],[0,0,0,0,1,1,1,3,0,3,2,1,0,0,0,0],[0,0,0,0,1,2,0,3,4,1,1,1,0,0,0,0],[0,0,0,0,1,1,1,1,3,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,2,1,0,0,0,0,0,0],[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0]], // Level 0
@@ -195,44 +172,76 @@ const LEVELS = [
     [[0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0],[0,0,0,0,0,0,1,3,0,3,3,3,0,0,1,0],[0,0,0,0,0,0,1,0,0,0,1,0,3,0,1,0],[0,0,0,0,0,0,1,0,0,0,3,4,3,0,1,0],[0,0,0,0,1,1,1,3,0,3,0,1,0,1,1,0],[0,0,0,0,1,0,0,0,3,1,3,1,0,1,0,0],[1,1,1,1,1,0,1,0,0,1,0,0,0,1,0,0],[1,2,2,2,0,0,1,0,3,1,0,1,1,1,0,0],[1,2,2,2,2,2,0,0,0,1,0,1,0,0,0,0],[1,2,2,2,2,2,1,0,3,1,0,1,0,0,0,0],[1,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0],[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0]], // Level 96
     [[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,1,0,0,3,1,1,0,0,1],[0,0,0,0,0,0,1,0,0,1,0,0,0,3,0,1],[1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,1],[0,1,0,1,0,0,1,0,3,0,3,0,0,3,0,1],[0,0,1,1,1,1,1,1,1,0,1,3,1,0,0,1],[0,0,1,0,0,3,0,3,0,0,0,0,0,0,1,0],[0,0,1,4,2,2,3,0,5,5,2,1,1,1,0,0],[0,0,0,1,2,2,2,2,2,2,1,1,1,1,1,0],[0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1]], // Level 99
 ];
-const MILESTONES = { 10: "暗号：【初露锋芒】", 20: "暗号：【渐入佳境】", 50: "终极通关！" };
+const MILESTONES = { 10: "暗号：【初露锋芒】", 20: "暗号：【渐入佳境】", 50: "终极通关！" };// ==========================================
+// 1. 全局变量统一化 (修复变量冲突)
+// ==========================================
+const MILESTONES = { 10: "暗号：【初露锋芒】", 20: "暗号：【渐入佳境】", 40: "终极通关！" };
 
-let currentLevelIdx = 0;
-let mapData = [];
-let history = [];
-let steps = 0;
-let completedLevels = JSON.parse(localStorage.getItem('sokoban_progress') || '[0]');
+let currentLevelIdx = 0;   // 当前关卡索引
+let mapData = [];          // 当前地图数据
+let history = [];          // 撤回历史
+let steps = 0;             // 步数
 
+// 统一进度管理变量名：unlockedLevels
+let unlockedLevels = JSON.parse(localStorage.getItem('sokoban_progress') || '[0]');
+
+// ==========================================
+// 2. 页面控制逻辑
+// ==========================================
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    
+    // 如果进入选关界面，调用正确的函数名
+    if(id === 'select-screen') renderLevelSelect();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('intro-screen').classList.contains('active')) showScreen('menu-screen');
+});
+
+// ==========================================
+// 3. 选关网格渲染 (修复显示逻辑)
+// ==========================================
 function renderLevelSelect() {
     const grid = document.getElementById('level-grid');
     grid.innerHTML = '';
-    // 假设总共有 50 关，即使数据还没填满，也先渲染 50 个框占位
-    const totalLevelsToShow = Math.max(50, LEVELS.length); 
-    for (let i = 0; i < totalLevelsToShow; i++) {
+    
+    // 渲染 40 个格子
+    for (let i = 0; i < 40; i++) {
         const box = document.createElement('div');
-        const isUnlocked = completedLevels.includes(i) && i < LEVELS.length;
-        box.className = 'level-box' + (isUnlocked ? '' : ' locked');
-        box.innerText = isUnlocked ? (i + 1) : '?';
-        if (isUnlocked) box.onclick = () => startLevel(i);
+        
+        // 判断条件：索引 i 必须在解锁列表里，且 i 小于关卡总数
+        const isUnlocked = unlockedLevels.includes(i);
+        const hasData = i < LEVELS.length;
+
+        if (isUnlocked && hasData) {
+            box.className = 'level-box'; // 已解锁样式
+            box.innerText = i + 1;
+            box.onclick = () => startLevel(i);
+        } else {
+            box.className = 'level-box locked'; // 未解锁样式
+            box.innerText = hasData ? (i + 1) : '?';
+        }
         grid.appendChild(box);
     }
 }
 
+// ==========================================
+// 4. 游戏核心逻辑 (矩阵翻译 & 移动)
+// ==========================================
 function startLevel(idx) {
-    currentLvl = idx;
+    currentLevelIdx = idx;
     steps = 0;
     history = [];
     
     let rawData = LEVELS[idx];
-    
-    // 映射表：必须包含 5 对应 '*' (Box on Target)
     const numToChar = { 0: ' ', 1: '#', 2: '.', 3: '$', 4: '@', 5: '*', 6: '+' };
     
+    // 矩阵转字符
     if (Array.isArray(rawData[0])) {
-        // 如果是 2D Array 格式
         mapData = rawData.map(row => row.map(num => numToChar[num] || ' '));
     } else {
-        // 兼容旧的字符串格式
         const maxW = Math.max(...rawData.map(r => r.length));
         mapData = rawData.map(row => row.padEnd(maxW, ' ').split(''));
     }
@@ -244,36 +253,32 @@ function startLevel(idx) {
 
 function renderBoard() {
     const board = document.getElementById('game-board');
-    const rows = mapData.length;
     const cols = mapData[0].length;
     board.style.gridTemplateColumns = `repeat(${cols}, 35px)`;
     board.innerHTML = '';
     const charMap = { '#': '█', ' ': ' ', '.': '·', '$': '▣', '@': '👤', '*': '✅', '+': '👥' };
 
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
+    mapData.forEach((row) => {
+        row.forEach((char) => {
             const cell = document.createElement('div');
-            const char = mapData[r][c];
-            cell.className = 'cell';
-            if (char === '#') cell.classList.add('cell-wall');
-            if (char === '.') cell.classList.add('cell-target');
+            cell.className = 'cell' + (char === '#' ? ' cell-wall' : '') + (char === '.' ? ' cell-target' : '');
             cell.innerText = charMap[char] || char;
             board.appendChild(cell);
-        }
-    }
+        });
+    });
     document.getElementById('step-count').innerText = steps;
 }
 
 function handleMove(dx, dy) {
     let r, c;
-    for (let i = 0; i < mapData.length; i++) {
-        for (let j = 0; j < mapData[i].length; j++) {
-            if (mapData[i][j] === '@' || mapData[i][j] === '+') { r = i; c = j; break; }
-        }
-    }
+    mapData.forEach((row, i) => row.forEach((char, j) => {
+        if (char === '@' || char === '+') { r = i; c = j; }
+    }));
+
     const nr = r + dy, nc = c + dx;
     const nnr = nr + dy, nnc = nc + dx;
     if (!mapData[nr] || mapData[nr][nc] === undefined) return;
+
     const prevState = JSON.stringify(mapData);
     let moved = false;
 
@@ -298,43 +303,54 @@ function handleMove(dx, dy) {
     }
 }
 
+// ==========================================
+// 5. 过关判断 (修复解锁逻辑)
+// ==========================================
 function checkWin() {
     if (!mapData.some(row => row.includes('$'))) {
-        if (!completedLevels.includes(currentLevelIdx + 1)) {
-            completedLevels.push(currentLevelIdx + 1);
-            localStorage.setItem('sokoban_progress', JSON.stringify(completedLevels));
+        const nextIdx = currentLevelIdx + 1;
+        
+        // 如果下一关还没解锁，将其加入解锁列表
+        if (nextIdx < LEVELS.length && !unlockedLevels.includes(nextIdx)) {
+            unlockedLevels.push(nextIdx);
+            localStorage.setItem('sokoban_progress', JSON.stringify(unlockedLevels));
         }
-        const levelNum = currentLevelIdx + 1;
-        if (MILESTONES[levelNum]) {
-            showModal("达成里程碑！", MILESTONES[levelNum]);
+
+        const msg = MILESTONES[currentLevelIdx + 1];
+        if (msg) {
+            showModal("里程碑达成！", msg);
         } else {
-            // 稍作延迟以免太过突兀
-            setTimeout(() => { showScreen('select-screen'); }, 500); 
+            alert("Level " + (currentLevelIdx + 1) + " 完成！");
+            showScreen('select-screen');
         }
     }
 }
 
+// ==========================================
+// 6. 其他功能 (重置、撤回、快捷键)
+// ==========================================
 function showModal(t, m) {
     document.getElementById('reward-title').innerText = t;
     document.getElementById('reward-msg').innerText = m;
     document.getElementById('reward-modal').style.display = 'block';
 }
-function closeModal() { document.getElementById('reward-modal').style.display = 'none'; showScreen('select-screen'); }
+function closeModal() { 
+    document.getElementById('reward-modal').style.display = 'none'; 
+    showScreen('select-screen'); 
+}
 function undo() { if(history.length > 0) { mapData = JSON.parse(history.pop()); steps--; renderBoard(); } }
 function resetLevel() { startLevel(currentLevelIdx); }
 function showLevelSelect() { showScreen('select-screen'); }
 
-// 键盘快捷键监听
 window.addEventListener('keydown', (e) => {
-    if (document.getElementById('game-screen').classList.contains('active')) {
-        if (e.key === 'ArrowUp') handleMove(0, -1);
-        if (e.key === 'ArrowDown') handleMove(0, 1);
-        if (e.key === 'ArrowLeft') handleMove(-1, 0);
-        if (e.key === 'ArrowRight') handleMove(1, 0);
-        if (e.key === 'z' || e.key === 'Z') undo();
-        if (e.key === 'r' || e.key === 'R') resetLevel();
-        if (e.key === 'Escape') showLevelSelect();
-    }
+    if (!document.getElementById('game-screen').classList.contains('active')) return;
+    if (e.key === 'ArrowUp') handleMove(0, -1);
+    if (e.key === 'ArrowDown') handleMove(0, 1);
+    if (e.key === 'ArrowLeft') handleMove(-1, 0);
+    if (e.key === 'ArrowRight') handleMove(1, 0);
+    if (e.key.toLowerCase() === 'z') undo();
+    if (e.key.toLowerCase() === 'r') resetLevel();
+    if (e.key === 'Escape') showLevelSelect();
 });
 </script>
 </body>
