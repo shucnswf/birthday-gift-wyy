@@ -23,7 +23,15 @@
         .cell { width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #000; }
         .cell-wall { background: var(--wall); color: #888; }
         .cell-target { color: #f00; font-weight: bold; }
-        .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 30px; }
+        .level-grid { 
+    display: grid; 
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 15px; 
+    margin-top: 30px;
+    max-height: 60vh; /* 设置最大高度，占屏幕高度的 60% */
+    overflow-y: auto;  /* 超过高度后显示滚动条 */
+    padding-right: 10px;
+}
         .level-box { width: 60px; height: 60px; font-size: 1.5rem; border: 1px solid var(--green); display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .level-box.locked { color: #333; border-color: #333; cursor: not-allowed; }
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 2px solid var(--green); padding: 30px; z-index: 1000; width: 80%; max-width: 400px; text-align: center; box-shadow: 0 0 30px var(--green); }
@@ -437,13 +445,25 @@ function showScreen(id) {
 function renderLevelSelect() {
     const grid = document.getElementById('level-grid');
     grid.innerHTML = '';
-    for (let i = 0; i < 40; i++) {
+    
+    // 将这里的 40 改为 LEVELS.length
+    for (let i = 0; i < LEVELS.length; i++) { 
         const box = document.createElement('div');
-        const isUnlocked = true//unlockedLevels.includes(i);
-        const hasData = true//i < LEVELS.length;
-        box.className = 'level-box' + (isUnlocked && hasData ? '' : ' locked');
-        box.innerText = (isUnlocked && hasData) ? (i + 1) : '?';
-        if (isUnlocked && hasData) box.onclick = () => startLevel(i);
+        
+        // 这里的判断也要确保 hasData 是正确的
+        const isUnlocked = unlockedLevels.includes(i);
+        const hasData = i < LEVELS.length;
+
+        // 如果你现在想直接看到 41-50 关进行测试，
+        // 可以把下面这行改为 const isUnlocked = true; (开发者模式)
+        if (isUnlocked && hasData) {
+            box.className = 'level-box';
+            box.innerText = i + 1;
+            box.onclick = () => startLevel(i);
+        } else {
+            box.className = 'level-box locked';
+            box.innerText = hasData ? (i + 1) : '?';
+        }
         grid.appendChild(box);
     }
 }
