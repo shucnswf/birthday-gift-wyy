@@ -51,49 +51,7 @@
             70% { transform: translate(-50%, -190%) translateZ(200px) scale(1.1); opacity: 0.8; }
             100% { transform: translate(-50%, -150%) translateZ(200px) scale(1.3); opacity: 0; }
         }
-    // ================= P2 专属逻辑：密码台与烟花 =================
-const birthdayData = [
-    { text: "平时工作多谢关照<br>生日快乐，天天开心" },
-    { text: "Happy Birthday" },
-    { text: "お誕生日おめでとう" },
-    { text: "Joyeux Anniversaire" },
-    { text: "Feliz Cumpleaños" },
-    { text: "С днем рождения" }
-];
-
-// 监听 P2 密码台的输入
-document.getElementById('pwd-input').addEventListener('input', function(e) {
-    if (e.target.value === '20260317') {
-        // 密码正确，使用你原有的架构直接切换图层！
-        showScreen('celebration-screen');
-        startTextFireworks(document.getElementById('celebration-screen'));
-    }
-});
-
-function startTextFireworks(container) {
-    let index = 0;
-    function createOneRocket() {
-        // 如果切回了别的图层，就停止放烟花
-        if (!container.classList.contains('active')) return;
-        
-        const data = birthdayData[index];
-        const textElement = document.createElement('div');
-        textElement.className = 'birthday-text';
-        textElement.innerHTML = data.text;
-        
-        const randomX = (Math.random() - 0.5) * 300; 
-        textElement.style.left = `calc(50% + ${randomX}px)`;
-        textElement.style.animation = `textRocketWithDepth 5s ease-out forwards`;
-
-        container.appendChild(textElement);
-        setTimeout(() => { textElement.remove(); }, 5000);
-
-        index = (index + 1) % birthdayData.length;
-        const nextLaunchDelay = 1500 + Math.random() * 2000; 
-        setTimeout(createOneRocket, nextLaunchDelay);
-    }
-    createOneRocket();
-}
+   
     </style>
 </head>
 <body>
@@ -664,6 +622,49 @@ document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'r') resetLevel();
     if (e.key === 'Escape') showScreen('select-screen');
 });
+     // ================= P2 专属逻辑：密码台与烟花 =================
+const birthdayData = [
+    { text: "平时工作多谢关照<br>生日快乐，天天开心" },
+    { text: "Happy Birthday" },
+    { text: "お誕生日おめでとう" },
+    { text: "Joyeux Anniversaire" },
+    { text: "Feliz Cumpleaños" },
+    { text: "С днем рождения" }
+];
+
+// 监听 P2 密码台的输入
+document.getElementById('pwd-input').addEventListener('input', function(e) {
+    if (e.target.value === '20260317') {
+        // 密码正确，使用你原有的架构直接切换图层！
+        showScreen('celebration-screen');
+        startTextFireworks(document.getElementById('celebration-screen'));
+    }
+});
+
+function startTextFireworks(container) {
+    let index = 0;
+    function createOneRocket() {
+        // 如果切回了别的图层，就停止放烟花
+        if (!container.classList.contains('active')) return;
+        
+        const data = birthdayData[index];
+        const textElement = document.createElement('div');
+        textElement.className = 'birthday-text';
+        textElement.innerHTML = data.text;
+        
+        const randomX = (Math.random() - 0.5) * 300; 
+        textElement.style.left = `calc(50% + ${randomX}px)`;
+        textElement.style.animation = `textRocketWithDepth 5s ease-out forwards`;
+
+        container.appendChild(textElement);
+        setTimeout(() => { textElement.remove(); }, 5000);
+
+        index = (index + 1) % birthdayData.length;
+        const nextLaunchDelay = 1500 + Math.random() * 2000; 
+        setTimeout(createOneRocket, nextLaunchDelay);
+    }
+    createOneRocket();
+}
 </script>
 </body>
 </html>
