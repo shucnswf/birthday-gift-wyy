@@ -227,8 +227,8 @@ function renderLevelSelect() {
         const box = document.createElement('div');
         
         // 这里的判断也要确保 hasData 是正确的
-        const isUnlocked = unlockedLevels.includes(i);
-        const hasData = i < LEVELS.length;
+        const isUnlocked = true//unlockedLevels.includes(i);
+        const hasData = true//i < LEVELS.length;
 
         // 如果你现在想直接看到 41-50 关进行测试，
         // 可以把下面这行改为 const isUnlocked = true; (开发者模式)
