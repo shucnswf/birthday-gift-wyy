@@ -36,27 +36,47 @@
         .level-box.locked { color: #333; border-color: #333; cursor: not-allowed; }
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; border: 2px solid var(--green); padding: 30px; z-index: 1000; width: 80%; max-width: 400px; text-align: center; box-shadow: 0 0 30px var(--green); }
     /* ================= 烟花动画样式 ================= */
-        .birthday-text {
-            position: absolute; width: 100%; text-align: center; top: 50%;
-            transform-style: preserve-3d; 
-            /* 颜色交由 JS 的变量动态控制 */
-            color: var(--txt-color, #f1c40f); 
-            text-shadow: 0 0 10px var(--txt-color, #f1c40f), 0 0 20px var(--glow-1, #e67e22), 0 0 30px var(--glow-2, #e74c3c);
-            font-size: 2.5rem; font-weight: bold; opacity: 0;
-            backface-visibility: hidden; pointer-events: none;
+      /* ================= 烟花动画样式 (唯美丝滑版) ================= */
+        
+        /* 核心修复 1：打破 800px 的边界束缚，让烟花真正全屏铺满 */
+        #celebration-screen {
+            max-width: none !important; 
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #050510 0%, #000 100%);
         }
+
+        .birthday-text {
+            position: absolute; 
+            white-space: nowrap; 
+            top: 50%; left: 50%; 
+            transform-style: preserve-3d; 
+            /* 核心修复 2：换掉极客字体，改用柔和优美的无衬线字体 */
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: var(--txt-color, #fff); 
+            /* 核心修复 3：精简阴影层数，极大减轻 GPU 负担，解决卡顿 */
+            text-shadow: 0 0 10px var(--glow-1), 0 0 20px var(--glow-2);
+            font-size: 2rem; 
+            font-weight: bold; 
+            opacity: 0;
+            backface-visibility: hidden; 
+            pointer-events: none;
+            /* 核心修复 4：开启硬件加速，让 3D 动画纵享丝滑 */
+            will-change: transform, opacity;
+        }
+
+        /* 动画轨迹优化：更柔和的浮现和消散 */
         @keyframes textRocketWithDepth {
-            0% { transform: translate(-50%, -50%) translateZ(-1000px) scale(0.1); opacity: 0; color: #fff; text-shadow: 0 0 5px #fff; }
-            30% { opacity: 1; transform: translate(-50%, -150%) translateZ(-100px) scale(0.8); }
+            0% { transform: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, 0px))) translateZ(-800px) scale(0.1); opacity: 0; }
+            20% { opacity: 1; }
             50% { 
-                transform: translate(-50%, -200%) translateZ(200px) scale(1.2); 
-                /* 绽放顶点：切换为随机彩色 */
-                color: var(--txt-color); 
-                text-shadow: 0 0 10px var(--txt-color), 0 0 30px var(--glow-1), 0 0 50px var(--glow-2); 
+                transform: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, -30px))) translateZ(100px) scale(var(--s, 1)); 
                 opacity: 1; 
             }
-            70% { transform: translate(-50%, -190%) translateZ(200px) scale(1.1); opacity: 0.8; }
-            100% { transform: translate(-50%, -150%) translateZ(200px) scale(1.3); opacity: 0; }
+            80% { opacity: 0.8; }
+            100% { transform: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, -60px))) translateZ(300px) scale(calc(var(--s, 1) * 1.2)); opacity: 0; }
         }
    
     </style>
@@ -348,33 +368,24 @@ document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'r') resetLevel();
     if (e.key === 'Escape') showScreen('select-screen');
 });
-   // ================= P2 专属逻辑：多色词云大爆炸 =================
-// 1. 扩充了 15 种语言的庞大语料库
+  // ================= P2 专属逻辑：唯美星光词云 =================
 const birthdayData = [
-    { text: "平时工作多谢关照<br>生日快乐，天天开心" }, // 中文主句（第一个出现）
-    { text: "Happy Birthday" }, // 英语
-    { text: "お誕生日おめでとう" }, // 日语
-    { text: "Joyeux Anniversaire" }, // 法语
-    { text: "Feliz Cumpleaños" }, // 西班牙语
-    { text: "С днем рождения" }, // 俄语
-    { text: "Alles Gute zum Geburtstag" }, // 德语
-    { text: "Buon Compleanno" }, // 意大利语
-    { text: "Feliz Aniversário" }, // 葡萄牙语
-    { text: "생일 축하합니다" }, // 韩语
-    { text: "Selamat Ulang Tahun" }, // 印尼语
-    { text: "สุขสันต์วันเกิด" }, // 泰语
-    { text: "जन्मदिन की शुभकामनाएं" }, // 印地语
-    { text: "Χρόνια Πολλά" }, // 希腊语
-    { text: "عيد ميلاد سعيد" } // 阿拉伯语
+    { text: "平时工作多谢关照<br>生日快乐，天天开心" }, 
+    { text: "Happy Birthday" }, { text: "お誕生日おめでとう" }, 
+    { text: "Joyeux Anniversaire" }, { text: "Feliz Cumpleaños" }, 
+    { text: "С днем рождения" }, { text: "Alles Gute zum Geburtstag" }, 
+    { text: "Buon Compleanno" }, { text: "Feliz Aniversário" }, 
+    { text: "생일 축하합니다" }, { text: "Selamat Ulang Tahun" }, 
+    { text: "สุขสันต์วันเกิด" }
 ];
 
-// 2. 准备了 5 款极客风格的高级霓虹配色
+// 颜色优化：去掉了刺眼的霓虹，换成了更温柔的高级马卡龙/星空色系
 const colorPalettes = [
-    { txt: '#f1c40f', g1: '#e67e22', g2: '#e74c3c' }, // 经典金红
-    { txt: '#00ffcc', g1: '#0099ff', g2: '#0033ff' }, // 赛博亮蓝
-    { txt: '#ff99ff', g1: '#cc00ff', g2: '#6600cc' }, // 幻影紫粉
-    { txt: '#a8ff78', g1: '#78ffd6', g2: '#00b09b' }, // 极光翠绿
-    { txt: '#ffffff', g1: '#f6d365', g2: '#fda085' }  // 珍珠暖橘
+    { txt: '#fff4e6', g1: '#ffb347', g2: '#ffcc33' }, // 暖星金
+    { txt: '#e0ffff', g1: '#87cefa', g2: '#00bfff' }, // 极光蓝
+    { txt: '#fff0f5', g1: '#ffb6c1', g2: '#ff69b4' }, // 樱花粉
+    { txt: '#f0fff0', g1: '#98fb98', g2: '#3cb371' }, // 薄荷绿
+    { txt: '#ffffff', g1: '#e6e6fa', g2: '#d8bfd8' }  // 珍珠白
 ];
 
 document.getElementById('pwd-input').addEventListener('input', function(e) {
@@ -382,72 +393,88 @@ document.getElementById('pwd-input').addEventListener('input', function(e) {
         showScreen('celebration-screen');
         startTextFireworks(document.getElementById('celebration-screen'));
     }
-});function startTextFireworks(container) {
-    let currentIndex = 0;
+});
 
-    // 核心工厂：负责制造每一条飞出的祝福语
+function startTextFireworks(container) {
+    let currentIndex = 0;
+    
+    // 性能保护锁：屏幕上最多同时出现 20 句话，超过就不再生成，直到旧的消失
+    let activeElements = 0;
+    const MAX_ELEMENTS = 20; 
+
     function createOneRocket(isWordCloud = false) {
         if (!container.classList.contains('active')) return;
+        
+        // 如果屏幕太挤了，就稍微等一下再发射，防止卡顿
+        if (isWordCloud && activeElements >= MAX_ELEMENTS) {
+            setTimeout(() => createOneRocket(true), 300);
+            return;
+        }
 
-        // 如果是词云模式就随机挑一句话，否则按顺序挑
+        activeElements++;
         let dataIndex = isWordCloud ? Math.floor(Math.random() * birthdayData.length) : currentIndex;
         const textElement = document.createElement('div');
         textElement.className = 'birthday-text';
-        textElement.innerHTML = birthdayData[dataIndex].text;
 
-        // 随机穿上一件彩色霓虹外衣
+        let textContent = birthdayData[dataIndex].text;
+        if (isWordCloud && dataIndex === 0) textContent = "天天开心！"; // 词云模式下中文更简短
+        textElement.innerHTML = textContent;
+
         const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
         textElement.style.setProperty('--txt-color', palette.txt);
         textElement.style.setProperty('--glow-1', palette.g1);
         textElement.style.setProperty('--glow-2', palette.g2);
 
         if (isWordCloud) {
-            // 【阶段二：词云爆炸模式】坐标极度混乱，大小不一，全屏重叠
-            const randX = (Math.random() - 0.5) * window.innerWidth * 0.8; // 水平铺满
-            const randY = (Math.random() - 0.5) * window.innerHeight * 0.7; // 垂直铺满
-            textElement.style.left = `calc(50% + ${randX}px)`;
-            textElement.style.marginTop = `${randY}px`; // 用 margin 改变高度以避免冲突
+            // 空间散布逻辑优化：现在真正能散布到整个全屏幕了
+            const safeX = window.innerWidth * 0.45; 
+            const safeY = window.innerHeight * 0.45;
+            const randX = (Math.random() - 0.5) * 2 * safeX;
+            const randY = (Math.random() - 0.5) * 2 * safeY;
             
-            // 随机大小和速度，制造空间层次感
-            textElement.style.fontSize = `${1.5 + Math.random() * 2}rem`; 
-            const duration = 3 + Math.random() * 4; 
+            textElement.style.setProperty('--ox', `${randX}px`);
+            textElement.style.setProperty('--oy', `${randY}px`);
+            textElement.style.setProperty('--s', `${0.5 + Math.random() * 0.8}`); // 差异化缩放
+
+            const duration = 4 + Math.random() * 3; 
             textElement.style.animation = `textRocketWithDepth ${duration}s ease-out forwards`;
+            
+            // 动画结束后销毁，并释放名额
+            setTimeout(() => { 
+                textElement.remove(); 
+                activeElements--;
+            }, duration * 1000);
+
         } else {
-            // 【阶段一：庄重朗读模式】乖乖在中间一个个出现
-            const randomX = (Math.random() - 0.5) * 150; 
-            textElement.style.left = `calc(50% + ${randomX}px)`;
+            // 阶段 1：中心逐字展示
+            textElement.style.setProperty('--ox', `0px`);
+            textElement.style.setProperty('--oy', `0px`);
+            textElement.style.setProperty('--s', `1.2`);
             textElement.style.animation = `textRocketWithDepth 4s ease-out forwards`;
-        }
+            
+            setTimeout(() => { 
+                textElement.remove(); 
+                activeElements--;
+            }, 4000);
 
-        container.appendChild(textElement);
-        // 动画放完后清理垃圾，防止浏览器卡死
-        setTimeout(() => { textElement.remove(); }, 8000); 
-
-        // 阶段一的进度控制
-        if (!isWordCloud) {
             currentIndex++;
             if (currentIndex >= birthdayData.length) {
-                // 所有的语言都念完一遍了！启动词云高潮！
-                setTimeout(startWordCloudBurst, 1000);
+                setTimeout(startWordCloudBurst, 500);
             } else {
-                // 每隔 1.8 秒匀速出现下一句
-                setTimeout(() => createOneRocket(false), 1800);
+                setTimeout(() => createOneRocket(false), 1500); // 放慢展示节奏
             }
         }
+        container.appendChild(textElement);
     }
 
-    // 制造词云大轰炸的引擎
     function startWordCloudBurst() {
         if (!container.classList.contains('active')) return;
-        // 一口气发射 8 条随机文字
-        for (let i = 0; i < 8; i++) {
-            setTimeout(() => createOneRocket(true), Math.random() * 1000);
-        }
-        // 每隔 1.5 秒再来一波，无限高潮
-        setTimeout(startWordCloudBurst, 1500);
+        
+        createOneRocket(true);
+        // 发射频率降低，依靠元素的持续时间来堆叠画面，而不是疯狂新建 DOM
+        setTimeout(startWordCloudBurst, 400 + Math.random() * 400);
     }
 
-    // 游戏开始：发射第一条中文！
     createOneRocket(false);
 }
 </script>
